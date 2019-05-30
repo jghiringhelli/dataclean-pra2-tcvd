@@ -1,0 +1,159 @@
+---
+title: "Practica 2 – Limpieza y validación de los datos"
+subtitle: "M2.854 - Tipología de vida y Ciclo de los Datos"
+author: "Juan Carlos Ghiringhelli Jueguen, Juan Pablo Botero Suaza"
+date: '`r format(Sys.Date(),"%e de %B, %Y")`'
+output:
+  html_document:
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+  pdf_document:
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+****
+# Introducción
+****
+
+## Descripción del dataset  
+
+El conjunto de datos elegido registra, en el contexto de consultas para diagnosticar diabetes, datos predictores médicos provenientes de un conjunto de pruebas realizadas a mujeres de la India.   
+
+Como suele ocurrir con datos predictivos médicos, es posible anticipar el diagnóstico de la condición médica para pacientes sin necesidad de realizar la prueba específica. Para casos de alto riesgo se podrían tomar las medidas adecuadas como notificación al paciente o tomar precauciones ante el ingreso del paciente a una operación o una emergencia. También sirve para comprender mejor las causas de la condición y la correlación de diferentes valores con la posibilidad de padecerla. 
+
+El contenido se descargó del siguiente enlace de Kaggle: https://www.kaggle.com/uciml/pima-indians-diabetes-database y contiene nueve atributos:  
+
+1. Pregnancies: Cantidad de veces que la paciente estuvo embarazada.
+2. Glucose: Concentración de glucosa en sangre dentro de dos horas de una prueba de resistencia oral a la glucosa, medido en miligramo por decilitro. 
+3. BloodPressure: Presión de sangre, en milímetros por mercurio, una medida médica equivalente a la presión de una columna de mercurio de un mm de alto a 0℃ a una atmosfera.
+4. SkinThickness: grosor de la piel en mm en la zona del pliegue del tríceps.
+5. Insulin: Insulina administrada por suero en la ultima hora, en unidades por mililitro.
+6. BMI: de Body Mass Index, índice de masa corporal, medido en (kilos/altura)².
+7. DiabetesPedigreeFunction: función de la condición presente en parientes para asignar una probabilidad genética de heredarla. 
+8. Age: edad en años.
+9. Outcome: Presencia de la condición diabetes, siendo 1 positivo y 0 negativo. El conjunto presenta 268 casos positivos sobre un total de 768.
+
+
+
+  
+****
+# Análisis descriptivo  
+****
+
+## Carga de los datos
+
+Cargar el archivo de datos diabetes.csv, validar que los tipos de datos son los correctos. Si no es así, conviertelos al tipo de datos adecuado. 
+
+```{r}
+data_clean<-read.csv("diabetes.csv", header=TRUE,sep=",",dec=".")
+str(data_clean)
+```
+El set de datos contiene  `r length(data_clean)` variables con un total de `r nrow(data_clean)` observaciones  
+  
+```{r}
+data_clean$Outcome<-as.factor(data_clean$Outcome)
+head(data_clean)
+summary(data_clean)
+```
+
+
+## Análisis visual 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align = "center",fig.height = 10, fig.width = 10}
+library(ggplot2) 
+library(ggpubr)
+
+ggarrange(
+ggplot(data = data_clean, aes(x=Outcome, y = Pregnancies, fill=Outcome)) + geom_boxplot(),
+
+ggplot(data = data_clean, aes(x=Outcome, y = Glucose, fill=Outcome)) + geom_boxplot(),
+
+ggplot(data = data_clean, aes(x=Outcome, y = BloodPressure, fill=Outcome)) + geom_boxplot(),
+
+ggplot(data = data_clean, aes(x=Outcome, y = SkinThickness, fill=Outcome)) + geom_boxplot(),
+
+ggplot(data = data_clean, aes(x = BMI))+   geom_histogram(col="black", aes(fill = Outcome),position = position_stack(reverse = TRUE))+labs( y = "Frecuencia"),
+
+ggplot(data = data_clean, aes(x = DiabetesPedigreeFunction))+   geom_histogram(col="black", aes(fill = Outcome),position = position_stack(reverse = TRUE))+labs( y = "Frecuencia"),
+
+ggplot(data = data_clean, aes(x = Age))+   geom_histogram(col="black", aes(fill = Outcome),position = position_stack(reverse = TRUE)) +labs( y = "Frecuencia")
+
+)
+
+```
+
+
+****
+# Integración y selección de los datos de interés a analizar
+****
+
+
+
+****
+# Limpieza de los datos
+****
+
+## Identificación y tratamiento de valores nulos, vacios y ceros    
+
+  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colSums(is.na(data_clean))
+colSums(data_clean=="")
+colSums(data_clean==0)
+```
+
+El conjunto de datos no presenta campos vacíos ni nulos, por lo que no será necesario tratarlos en este aspecto. 
+El atributo de edad, el rango de edades va de 21 años a 81, por lo que parece correcto y no haremos nada con estos datos. 
+Los atributos de cantidad de embarazos y insulina en sangre presentan casos con 0, lo cual es coherente, tanto por no haber estado embarazada nunca la persona como por no consumir insulina. Si bien puede resultar de una falta de datos, se asumirá que todos estos casos son válidos. 
+Los valores de glucosa, presión de sangre, grosor de la piel en el tríceps, e índice de masa corporal presentan valores en cero. Consideraremos que esto denota una falta de datos, ya que en cualquiera de estos casos el paciente estaría muerto o herido de gravedad. Para cada caso:
+
+• Glucosa: el nivel de glucosa en sangre, a diferencia de la presión, no tiene un valor constante que refleja un buen estado de salud. Si bien los extremos siempre son peligrosos, esta presenta normalmente una gran varianza dependiendo de la última vez que se consumió glucosa, que cantidad, en que forma, con que alimentos y dependiendo del metabolismo y actividad inmediata. Dentro de los valores analizados, es el que presenta más variabilidad y valores extremos, por lo que tomaremos el valor mediano para imputar.  
+ 
+• Presión de sangre: Muchos valores presentan una variación muy alta o baja, y ni el promedio ni la mediana representan realmente un valor neutro, lo que haría que puedan tener un peso sobre la predicción siendo un valor desconocido. Utilizando registros médicos, seleccionaremos el valor 105, valor considerado normal para mujeres de cualquier edad, dando por supuesto que si no se sabe el valor es porque no se consideró importante anotarlo o medirlo.  
+
+•Grosor de piel: Los valores presentan un rango mediano y valores bien distribuidos, por lo que consideraremos el atributo como simétrico y usaremos el promedio.  
+
+•Índice de masa corporal (IBM): similar caso al grosor de piel, usaremos el promedio.
+
+
+## Identificación y tratamiento de valores extremos 
+
+
+
+****
+# Análisis de los datos
+****
+
+## Selección de los grupos de datos que se quieren analizar  
+
+## Comprobación de la normalidad y homogeneidad de la varianza  
+ 
+## Correlaciones
+
+## Analisis inferencial
+
+## Análisis predictivo
+
+
+
+****
+# Presentacion de resultados
+****
+
+****
+# Conclusiones
+****
+
+
+****
+# Bibliografía
+****
