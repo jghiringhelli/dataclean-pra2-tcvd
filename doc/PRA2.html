@@ -269,91 +269,20 @@ str(indian_diabetes)</code></pre>
 indian_diabetes$Outcome&lt;-as.factor(indian_diabetes$Outcome)
 
 head(indian_diabetes)</code></pre>
-<div class="kable-table">
-<table>
-<thead>
-<tr class="header">
-<th align="right">Pregnancies</th>
-<th align="right">Glucose</th>
-<th align="right">BloodPressure</th>
-<th align="right">SkinThickness</th>
-<th align="right">Insulin</th>
-<th align="right">BMI</th>
-<th align="right">DiabetesPedigreeFunction</th>
-<th align="right">Age</th>
-<th align="left">Outcome</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="right">6</td>
-<td align="right">148</td>
-<td align="right">72</td>
-<td align="right">35</td>
-<td align="right">0</td>
-<td align="right">33.6</td>
-<td align="right">0.627</td>
-<td align="right">50</td>
-<td align="left">1</td>
-</tr>
-<tr class="even">
-<td align="right">1</td>
-<td align="right">85</td>
-<td align="right">66</td>
-<td align="right">29</td>
-<td align="right">0</td>
-<td align="right">26.6</td>
-<td align="right">0.351</td>
-<td align="right">31</td>
-<td align="left">0</td>
-</tr>
-<tr class="odd">
-<td align="right">8</td>
-<td align="right">183</td>
-<td align="right">64</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">23.3</td>
-<td align="right">0.672</td>
-<td align="right">32</td>
-<td align="left">1</td>
-</tr>
-<tr class="even">
-<td align="right">1</td>
-<td align="right">89</td>
-<td align="right">66</td>
-<td align="right">23</td>
-<td align="right">94</td>
-<td align="right">28.1</td>
-<td align="right">0.167</td>
-<td align="right">21</td>
-<td align="left">0</td>
-</tr>
-<tr class="odd">
-<td align="right">0</td>
-<td align="right">137</td>
-<td align="right">40</td>
-<td align="right">35</td>
-<td align="right">168</td>
-<td align="right">43.1</td>
-<td align="right">2.288</td>
-<td align="right">33</td>
-<td align="left">1</td>
-</tr>
-<tr class="even">
-<td align="right">5</td>
-<td align="right">116</td>
-<td align="right">74</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">25.6</td>
-<td align="right">0.201</td>
-<td align="right">30</td>
-<td align="left">0</td>
-</tr>
-</tbody>
-</table>
-</div>
+<pre><code>##   Pregnancies Glucose BloodPressure SkinThickness Insulin  BMI
+## 1           6     148            72            35       0 33.6
+## 2           1      85            66            29       0 26.6
+## 3           8     183            64             0       0 23.3
+## 4           1      89            66            23      94 28.1
+## 5           0     137            40            35     168 43.1
+## 6           5     116            74             0       0 25.6
+##   DiabetesPedigreeFunction Age Outcome
+## 1                    0.627  50       1
+## 2                    0.351  31       0
+## 3                    0.672  32       1
+## 4                    0.167  21       0
+## 5                    2.288  33       1
+## 6                    0.201  30       0</code></pre>
 <pre class="r"><code>summary(indian_diabetes)</code></pre>
 <pre><code>##   Pregnancies        Glucose      BloodPressure    SkinThickness  
 ##  Min.   : 0.000   Min.   :  0.0   Min.   :  0.00   Min.   : 0.00  
@@ -542,15 +471,154 @@ Nivel de significancia: 0.05</p>
 <div id="analisis-inferencial" class="section level2">
 <h2><span class="header-section-number">5.3</span> Analisis inferencial</h2>
 <p>Utilizar test “Levene”&quot; para confirmar homogeneidad de la varianza de acuerdo a los resultados obtenidos en el test de normalidad. En este caso se utiliza un test no parámetrico dado que ninguna de las variables cumple el supuesto de normalidad.</p>
-<p>Preguntas:</p>
+<p>H0: las varianzas de las muestras son iguales<br />
+H1: el menos 2 de las varianzas difieren en las muestras.<br />
+Nivel de significancia: 0.05</p>
+<p><strong>Preguntas</strong>:</p>
 <p>El valor medio en la presión sanguinea (BloodPressure) es estadísticamente significativo para mujeres que presentan diabetes (Outcome=1) respecto a aquellas que no la presentan (Outcome=0) ?.</p>
+<pre class="r"><code>library(car)
+
+#la prueba revela un valor de p mayor que 0.05, lo que indica que no hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1)
+leveneTest(BloodPressure ~ Outcome, data = indian_diabetes)</code></pre>
+<pre><code>## Levene's Test for Homogeneity of Variance (center = median)
+##        Df F value Pr(&gt;F)
+## group   1  0.0627 0.8024
+##       766</code></pre>
+<pre class="r"><code>bp_sdiabetes&lt;- indian_diabetes[indian_diabetes$Outcome==1, &quot;BloodPressure&quot;]
+bp_ndiabetes&lt;- indian_diabetes[indian_diabetes$Outcome==0, &quot;BloodPressure&quot;]
+
+# Como el valor p resultante  es menor que el nivel de significación de .05, rechazamos la hipótesis nula, es decir, el valor de la mediana en la presión sanguinea para las mujeres con condicion diabetica es significativamente mayor respecto a aquellas que no presentan el síntoma.  
+wilcox.test(bp_sdiabetes,bp_ndiabetes,alternative=&quot;greater&quot;)</code></pre>
+<pre><code>## 
+##  Wilcoxon rank sum test with continuity correction
+## 
+## data:  bp_sdiabetes and bp_ndiabetes
+## W = 81508, p-value = 3.587e-07
+## alternative hypothesis: true location shift is greater than 0</code></pre>
 <p>El valor medio en la glucosa (Glucose) es estadísticamente significativo para mujeres que presentan diabetes (Outcome=1) respecto a aquellas que no la presentan (Outcome=0) ?.</p>
+<pre class="r"><code>#la prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restriccion para utilizar el test no paramétrico
+leveneTest(Glucose ~ Outcome, data = indian_diabetes)</code></pre>
+<pre><code>## Levene's Test for Homogeneity of Variance (center = median)
+##        Df F value    Pr(&gt;F)    
+## group   1  24.032 1.157e-06 ***
+##       766                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>gl_sdiabetes&lt;- indian_diabetes[indian_diabetes$Outcome==1, &quot;Glucose&quot;]
+gl_ndiabetes&lt;- indian_diabetes[indian_diabetes$Outcome==0, &quot;Glucose&quot;]
+
+# Como el valor p resultante  es menor que el nivel de significación de .05, rechazamos la hipótesis nula, es decir, el valor de la mediana en la glucosa para las mujeres con condicion diabetica es significativamente mayor respecto a aquellas que no presentan el síntoma.  
+wilcox.test(gl_sdiabetes,gl_ndiabetes,alternative=&quot;greater&quot;)</code></pre>
+<pre><code>## 
+##  Wilcoxon rank sum test with continuity correction
+## 
+## data:  gl_sdiabetes and gl_ndiabetes
+## W = 106070, p-value &lt; 2.2e-16
+## alternative hypothesis: true location shift is greater than 0</code></pre>
 </div>
 <div id="analisis-predictivo" class="section level2">
 <h2><span class="header-section-number">5.4</span> Análisis predictivo</h2>
 <p>Construir un modelo de clasificación que permita predecir a partir de las variables independientes objeto de estudio, si una mujer podria tener o no una condición diabética en su organismo.</p>
-<p>Propuesta I: Regresion logística.<br />
-Propuesta II: Arboles de desicion C50.</p>
+<p><em>Propuesta I: Regresion logística.</em></p>
+<pre class="r"><code>set.seed(1234)
+
+#Al establecer el parámetro  type='response', R generará probabilidades de la forma de P (y = 1 | X). Nuestro límite de decisión será de 0.7. Si P (y = 1 | X)&gt; 0.7 entonces y = 1 de lo contrario y = 0, siendo y nuestra variable dependiente Outcome
+
+train_idx &lt;- sample(1:nrow(indian_diabetes),nrow(indian_diabetes)*0.7,replace=FALSE)
+train&lt;-indian_diabetes[train_idx,]
+test&lt;-indian_diabetes[-train_idx,]
+
+modelo_rl&lt;-glm(Outcome ~  . , data=indian_diabetes,family=binomial(link=logit))
+
+#Evaluar si alguno de los regresores tiene influencia significativa (p-valor del contraste individual inferior al 5 %).
+summary(modelo_rl)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = Outcome ~ ., family = binomial(link = logit), data = indian_diabetes)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.7072  -0.7113  -0.3946   0.7061   2.4844  
+## 
+## Coefficients:
+##                            Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)              -9.6573773  0.8208482 -11.765  &lt; 2e-16 ***
+## Pregnancies               0.1208219  0.0323080   3.740 0.000184 ***
+## Glucose                   0.0380529  0.0038443   9.898  &lt; 2e-16 ***
+## BloodPressure             0.0005079  0.0074491   0.068 0.945645    
+## SkinThickness             0.0038679  0.0132473   0.292 0.770306    
+## Insulin                  -0.0014077  0.0008417  -1.673 0.094415 .  
+## BMI                       0.0902918  0.0178297   5.064  4.1e-07 ***
+## DiabetesPedigreeFunction  0.9325081  0.2987518   3.121 0.001800 ** 
+## Age                       0.0089128  0.0093585   0.952 0.340906    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 993.48  on 767  degrees of freedom
+## Residual deviance: 711.96  on 759  degrees of freedom
+## AIC: 729.96
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>modelo_rl2&lt;-glm(Outcome ~  Pregnancies+Glucose+ BMI+DiabetesPedigreeFunction , data=indian_diabetes,family=binomial(link=logit))
+summary(modelo_rl2)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = Outcome ~ Pregnancies + Glucose + BMI + DiabetesPedigreeFunction, 
+##     family = binomial(link = logit), data = indian_diabetes)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.8221  -0.7246  -0.3996   0.7255   2.4339  
+## 
+## Coefficients:
+##                           Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)              -9.184046   0.705727 -13.014  &lt; 2e-16 ***
+## Pregnancies               0.143276   0.027541   5.202 1.97e-07 ***
+## Glucose                   0.036879   0.003487  10.575  &lt; 2e-16 ***
+## BMI                       0.088717   0.014729   6.023 1.71e-09 ***
+## DiabetesPedigreeFunction  0.881577   0.294667   2.992  0.00277 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 993.48  on 767  degrees of freedom
+## Residual deviance: 716.38  on 763  degrees of freedom
+## AIC: 726.38
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>#El menor valor para el indicador AIC corresponde al modelo con los regresores *Pregnancies + Glucose + BMI + DiabetesPedigreeFunction*, por lo tanto se elige este como el mejor modelo de predicción para estimar la condicion de diabetes.
+
+#Matriz de confusión y precisión del modelo 1
+precdb &lt;- predict(modelo_rl,newdata=test,type='response')
+precdb &lt;- ifelse(precdb &gt; 0.70,1,0)
+misClasificError &lt;- mean(precdb != test$Outcome)
+                         
+print(paste('Precisión en la clasificación:',round((1-misClasificError)*100,digits = 2),'%'))</code></pre>
+<pre><code>## [1] &quot;Precisión en la clasificación: 76.62 %&quot;</code></pre>
+<pre class="r"><code>table(test$Outcome,precdb)</code></pre>
+<pre><code>##    precdb
+##       0   1
+##   0 146   8
+##   1  46  31</code></pre>
+<pre class="r"><code>#Matriz de confusión y precisión del modelo 2
+precdb2 &lt;- predict(modelo_rl2,newdata=test[,c(&quot;Pregnancies&quot;,&quot;Glucose&quot;,&quot;BMI&quot;,&quot;DiabetesPedigreeFunction&quot;)],type='response')
+precdb2 &lt;- ifelse(precdb2 &gt; 0.70,1,0)
+misClasificError2 &lt;- mean(precdb2 != test$Outcome)
+                         
+print(paste('Precisión en la clasificación:',round((1-misClasificError2)*100,digits = 2),'%'))</code></pre>
+<pre><code>## [1] &quot;Precisión en la clasificación: 76.19 %&quot;</code></pre>
+<pre class="r"><code>table(test$Outcome,precdb2)</code></pre>
+<pre><code>##    precdb2
+##       0   1
+##   0 145   9
+##   1  46  31</code></pre>
+<p>Los falsos positivos corresponde a casos en que la predicción de la probabilidad de la respuesta afirmativa es elevada , pero la respuesta observada es negativa, en nuestro caso para 9 mujeres, el modelo indica que tiene condición diabética “1”, pero en realidad no la tiene “0”.</p>
+<p>Los falsos negativos corresponde a casos donde el modelo predice que una mujer tiene una probabilidad de condición diabética baja, sin embargo las mujeres observadas si presentan una condición diabética, 46 individuos en este caso.</p>
+<p>Ademas se puede evidenciar que para obtener un nivel de precisión similar al modelo con todas las variables, tan solo basta con utilizar las 4 variables explicativas comentadas anteriormente.</p>
+<p><em>Propuesta II: Arboles de desicion C50. </em></p>
 <hr />
 </div>
 </div>
