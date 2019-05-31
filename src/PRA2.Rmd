@@ -5,7 +5,7 @@ author: "Juan Carlos Ghiringhelli Jueguen, Juan Pablo Botero Suaza"
 date: '`r format(Sys.Date(),"%e de %B, %Y")`'
 output:
   html_document:
-    df_print: kable
+    df_print: default
     number_sections: yes
     toc: yes
     toc_depth: 2
@@ -233,21 +233,100 @@ De acuerdo al test de Shapiro-Wilk, todo los **valores p** obtenidos son inferio
 
 Utilizar test "Levene"" para confirmar homogeneidad de la varianza de acuerdo a los resultados obtenidos en el test de normalidad.  En este caso se utiliza un test no parámetrico dado que ninguna de las variables cumple el supuesto de normalidad.    
 
+H0: las varianzas de las muestras son iguales  
+H1: el menos 2 de las varianzas difieren en las muestras.  
+Nivel de significancia: 0.05
 
-Preguntas:  
+**Preguntas**:  
 
 El valor medio en la presión sanguinea (BloodPressure) es estadísticamente significativo para mujeres que presentan diabetes (Outcome=1) respecto a aquellas que no la presentan (Outcome=0) ?.  
 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(car)
+
+#la prueba revela un valor de p mayor que 0.05, lo que indica que no hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1)
+leveneTest(BloodPressure ~ Outcome, data = indian_diabetes)
+
+
+bp_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "BloodPressure"]
+bp_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "BloodPressure"]
+
+# Como el valor p resultante  es menor que el nivel de significación de .05, rechazamos la hipótesis nula, es decir, el valor de la mediana en la presión sanguinea para las mujeres con condicion diabetica es significativamente mayor respecto a aquellas que no presentan el síntoma.  
+wilcox.test(bp_sdiabetes,bp_ndiabetes,alternative="greater")
+```
 
 El valor medio en la glucosa (Glucose) es estadísticamente significativo para mujeres que presentan diabetes (Outcome=1) respecto a aquellas que no la presentan (Outcome=0) ?.  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+#la prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restriccion para utilizar el test no paramétrico
+leveneTest(Glucose ~ Outcome, data = indian_diabetes)
+
+
+gl_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "Glucose"]
+gl_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "Glucose"]
+
+# Como el valor p resultante  es menor que el nivel de significación de .05, rechazamos la hipótesis nula, es decir, el valor de la mediana en la glucosa para las mujeres con condicion diabetica es significativamente mayor respecto a aquellas que no presentan el síntoma.  
+wilcox.test(gl_sdiabetes,gl_ndiabetes,alternative="greater")
+```
+
 
 ## Análisis predictivo
 
 Construir un modelo de clasificación que permita predecir a partir de las variables independientes objeto de estudio, si una mujer podria tener o no una condición diabética en su organismo.
 
-Propuesta I: Regresion logística.  
-Propuesta II: Arboles de desicion C50.  
+*Propuesta I: Regresion logística.* 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(1234)
 
+#Al establecer el parámetro  type='response', R generará probabilidades de la forma de P (y = 1 | X). Nuestro límite de decisión será de 0.7. Si P (y = 1 | X)> 0.7 entonces y = 1 de lo contrario y = 0, siendo y nuestra variable dependiente Outcome
+
+train_idx <- sample(1:nrow(indian_diabetes),nrow(indian_diabetes)*0.7,replace=FALSE)
+train<-indian_diabetes[train_idx,]
+test<-indian_diabetes[-train_idx,]
+
+modelo_rl<-glm(Outcome ~  . , data=indian_diabetes,family=binomial(link=logit))
+
+#Evaluar si alguno de los regresores tiene influencia significativa (p-valor del contraste individual inferior al 5 %).
+summary(modelo_rl)
+
+modelo_rl2<-glm(Outcome ~  Pregnancies+Glucose+ BMI+DiabetesPedigreeFunction , data=indian_diabetes,family=binomial(link=logit))
+summary(modelo_rl2)
+
+#El menor valor para el indicador AIC corresponde al modelo con los regresores *Pregnancies + Glucose + BMI + DiabetesPedigreeFunction*, por lo tanto se elige este como el mejor modelo de predicción para estimar la condicion de diabetes.
+
+#Matriz de confusión y precisión del modelo 1
+precdb <- predict(modelo_rl,newdata=test,type='response')
+precdb <- ifelse(precdb > 0.70,1,0)
+misClasificError <- mean(precdb != test$Outcome)
+                         
+print(paste('Precisión en la clasificación:',round((1-misClasificError)*100,digits = 2),'%'))
+
+table(test$Outcome,precdb)
+
+
+#Matriz de confusión y precisión del modelo 2
+precdb2 <- predict(modelo_rl2,newdata=test[,c("Pregnancies","Glucose","BMI","DiabetesPedigreeFunction")],type='response')
+precdb2 <- ifelse(precdb2 > 0.70,1,0)
+misClasificError2 <- mean(precdb2 != test$Outcome)
+                         
+print(paste('Precisión en la clasificación:',round((1-misClasificError2)*100,digits = 2),'%'))
+
+table(test$Outcome,precdb2)
+
+```
+
+Los falsos positivos corresponde a casos en que la predicción de la probabilidad de la respuesta afirmativa es elevada , pero la respuesta observada es negativa, en nuestro caso para 9 mujeres, el modelo indica que tiene condición diabética “1”, pero en realidad no la tiene “0”.
+
+Los falsos negativos corresponde a casos donde el modelo predice que una mujer tiene una probabilidad de condición diabética baja,  sin embargo las mujeres observadas si presentan una condición diabética, 46 individuos en este caso. 
+
+Ademas se puede evidenciar que para obtener un nivel de precisión similar al modelo con todas las variables, tan solo basta con utilizar las 4 variables explicativas comentadas anteriormente.  
+
+
+*Propuesta II: Arboles de desicion C50. *
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+```
 ****
 # Presentacion de resultados
 ****
