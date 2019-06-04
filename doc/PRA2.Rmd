@@ -1,0 +1,400 @@
+---
+title: "Practica 2 – Limpieza y validación de los datos"
+subtitle: "M2.854 - Tipología de vida y Ciclo de los Datos"
+author: "Juan Carlos Ghiringhelli Jueguen, Juan Pablo Botero Suaza"
+date: '`r format(Sys.Date(),"%e de %B, %Y")`'
+output:
+  html_document:
+    df_print: default
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+  pdf_document:
+    df_print: kable
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+****
+# Introducción
+****
+
+## Descripción del dataset  
+
+El conjunto de datos elegido registra, en el contexto de consultas para diagnosticar diabetes, datos predictores médicos provenientes de un conjunto de pruebas realizadas a mujeres de la India.   
+
+Como suele ocurrir con datos predictivos médicos, es posible anticipar el diagnóstico de la condición médica para pacientes sin necesidad de realizar la prueba específica. Para casos de alto riesgo se podrían tomar las medidas adecuadas como notificación al paciente o tomar precauciones ante el ingreso del paciente a una operación o una emergencia. También sirve para comprender mejor las causas de la condición y la correlación de diferentes valores con la posibilidad de padecerla. 
+
+El contenido se descargó del siguiente enlace de Kaggle: https://www.kaggle.com/uciml/pima-indians-diabetes-database y contiene nueve atributos:  
+
+1. Pregnancies: Cantidad de veces que la paciente estuvo embarazada.
+2. Glucose: Concentración de glucosa en sangre dentro de dos horas de una prueba de resistencia oral a la glucosa, medido en miligramo por decilitro. 
+3. BloodPressure: Presión de sangre, en milímetros por mercurio, una medida médica equivalente a la presión de una columna de mercurio de un mm de alto a 0℃ a una atmosfera.
+4. SkinThickness: grosor de la piel en mm en la zona del pliegue del tríceps.
+5. Insulin: Insulina administrada por suero en la ultima hora, en unidades por mililitro.
+6. BMI: de Body Mass Index, índice de masa corporal, medido en (kilos/altura)².
+7. DiabetesPedigreeFunction: función de la condición presente en parientes para asignar una probabilidad genética de heredarla. 
+8. Age: edad en años.
+9. Outcome: Presencia de la condición diabetes, siendo 1 positivo y 0 negativo. El conjunto presenta 268 casos positivos sobre un total de 768.
+
+
+
+  
+****
+# Análisis descriptivo  
+****
+
+## Carga de los datos
+
+Cargar el archivo de datos diabetes.csv, validar que los tipos de datos son los correctos. Si no es así, conviertelos al tipo de datos adecuado. 
+
+```{r}
+indian_diabetes<-read.csv("../data/diabetes.csv", header=TRUE,sep=",",dec=".")
+str(indian_diabetes)
+```
+El set de datos contiene  `r length(indian_diabetes)` variables con un total de `r nrow(indian_diabetes)` observaciones  
+  
+```{r}
+#Convertir variable objetivo a tipo factor para análisis posteriores
+indian_diabetes$Outcome<-as.factor(indian_diabetes$Outcome)
+
+head(indian_diabetes)
+summary(indian_diabetes)
+```
+
+
+## Análisis visual 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align = "center",fig.height = 10, fig.width = 10}
+library(ggplot2) 
+library(ggpubr)
+
+ggarrange(
+ggplot(data = indian_diabetes, aes(x=Outcome, y = Pregnancies, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = Glucose, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = BloodPressure, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = Insulin, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = SkinThickness, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = BMI, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = DiabetesPedigreeFunction, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE),
+
+ggplot(data = indian_diabetes, aes(x=Outcome, y = Age, fill=Outcome)) + geom_boxplot() + guides(fill=FALSE)
+
+)
+
+```
+
+A partir de los gráficos de boxplot podemos inferir que algunas variables pueden tener mayor incidencia sobre la condición diabética para una mujer de la muestra, donde resalta notoriamente el número de embarazos(Pregnancies), la edad (Age), el nivel de glucosa (Glucose) y el índice de masa corporal (BMI), en los apartados posteriores analizaremos si esta afirmación gráfica tambien tiene su correspondencia desde el punto de vista estadístico inferenial/predictivo.  
+
+****
+# Integración y selección de los datos de interés a analizar
+****
+
+Inicialmente, para nuestro caso se consideraran todas las variables independientes para construir el modelo explicativo sobre el atributo Outcome, en caso de identificarse variables estadísticamente no significativas durante el proceso, serán exluídas de dichos modelos con el fin de obtener un resultado más adecuado para explicar el diagnóstico de presencia de diabetes sobre esta muestra de la población.  
+
+
+****
+# Limpieza de los datos
+****
+
+## Identificación y tratamiento de valores nulos, vacios y ceros    
+
+  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colSums(is.na(indian_diabetes))
+colSums(indian_diabetes=="")
+colSums(indian_diabetes==0)
+```
+
+El conjunto de datos no presenta campos vacíos ni nulos, por lo que no será necesario tratarlos en este aspecto. 
+
+Los atributos de cantidad de embarazos e insulina en sangre presentan casos con 0, lo cual es coherente, tanto por no haber estado embarazada nunca la persona como por no consumir insulina. Si bien puede resultar de una falta de datos, se asumirá que todos estos casos son válidos.  
+
+Los valores de glucosa, presión de sangre, grosor de la piel en el tríceps, e índice de masa corporal presentan valores en cero. Consideraremos que esto denota una falta de datos, ya que en cualquiera de estos casos el paciente estaría muerto o herido de gravedad.  
+
+Para cada caso:
+
+• Glucosa: el nivel de glucosa en sangre, a diferencia de la presión, no tiene un valor constante que refleja un buen estado de salud. Si bien los extremos siempre son peligrosos, esta presenta normalmente una gran varianza dependiendo de la última vez que se consumió glucosa, que cantidad, en que forma, con que alimentos y dependiendo del metabolismo y actividad inmediata. Dentro de los valores analizados, es el que presenta más variabilidad y valores extremos, aunque de los 768 casos, solo 5 presentan un 0, por lo que utilizaremos el mediano. Otra opción sería, dada la baja relación entre casos con valores faltantes y casos totales, eliminar los registros totalmente.
+ 
+• Presión de sangre: Muchos valores presentan una variación muy alta o baja, y ni el promedio ni la mediana representan realmente un valor neutro, lo que haría que puedan tener un peso sobre la predicción siendo un valor desconocido. Utilizando registros médicos, seleccionaremos el valor 105, valor considerado normal para mujeres de cualquier edad, dando por supuesto que si no se sabe el valor es porque no se consideró importante anotarlo o medirlo. 
+
+•Grosor de piel: Los valores presentan un rango mediano y valores bien distribuidos, y presentan el conteo más alto de valores faltantes. Se presentan 227 casos sobre el total, una cantidad importante, por lo que usaremos el método de los k vecinos más cercanos, más robusto que la mediana o promedio.
+
+•Índice de masa corporal (IBM): similar caso al grosor de piel, pero con un número mucho menor de casos, solo 10, usaremos el promedio, al presentar los datos valores con baja varianza y simétricos.
+
+## Imputación de valores
+
+A continuación, se ejectuaran los scripts para imputación de datos vacios.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#imputar glucose con valor de la mediana
+glucose_median <- median(indian_diabetes$Glucose[indian_diabetes$Glucose!=0])
+indian_diabetes$Glucose <- ifelse(indian_diabetes$Glucose==0, glucose_median, indian_diabetes$Glucose)
+
+#imputar blood pressure con valor tipico
+indian_diabetes$BloodPressure <- ifelse(indian_diabetes$BloodPressure==0, 105, indian_diabetes$BloodPressure)
+
+#imputar skin thick con valor de la media
+library(DMwR)
+indian_diabetes$SkinThickness[indian_diabetes$SkinThickness== 0] <- NA
+#usando parámetros por defecto, k=10, weighted average, scale = T
+indian_diabetes <- knnImputation(as.data.frame(indian_diabetes))
+
+#imputar BMI con valor de la media
+bmi_mean <- lapply(mean(indian_diabetes$BMI[indian_diabetes$BMI!=0]), round, 1)[[1]]
+indian_diabetes$BMI <- ifelse(indian_diabetes$BMI==0, bmi_mean, indian_diabetes$BMI)
+```
+
+## Identificación y tratamiento de valores extremos 
+
+Utilizaremos _boxplots_ para analizar los valores extremos. Utilizaremos el rango inter cuartil, la diferencia entre los valores de los cuartiles 75 y 25, para detectar valores extremos. 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+#analisis outliers
+
+outlier_glucose <- boxplot.stats(indian_diabetes$Glucose)$out 
+outlier_glucose
+
+
+outlier_bmi <- boxplot.stats(indian_diabetes$BMI)$out 
+outlier_bmi
+
+
+outlier_ins <- boxplot.stats(indian_diabetes$Insulin)$out 
+outlier_ins
+
+
+outlier_age <- boxplot.stats(indian_diabetes$Age)$out 
+outlier_age
+
+outlier_pregnancies <- boxplot.stats(indian_diabetes$Pregnancies)$out 
+outlier_pregnancies
+
+
+outlier_bpressure <- boxplot.stats(indian_diabetes$BloodPressure)$out 
+outlier_bpressure
+
+
+outlier_skin <- boxplot.stats(indian_diabetes$SkinThickness)$out 
+outlier_skin
+
+
+outlier_dpf <- boxplot.stats(indian_diabetes$DiabetesPedigreeFunction)$out 
+outlier_dpf
+
+
+
+```
+Utilizaremos este paso para detectar a simple vista los casos más importantes, permitiéndonos seleccionar atributos problemáticos. Si bien la insulina presenta muchos valores extremos, este valor mide la dosis dada al paciente en la última hora, por lo cual es normal que los valores sean arbitrariamente muy diferentes. Para detectar explicitamente los valores, utilizaremos un método multi-variable. Crearemos un modelo lineal con las observaciones de la glucosa, por ser el valor con más importancia detectado anteriormente y por no presentar valores extremos en las _boxplots_, y utilizando el conjunto total de datos menos la prueba de insulina, ya que el valor 0 es muy común y el hecho de que se le haya suministrado al paciente en la última hora no debería tener gran influencia en el padecimiento de la condición. 
+
+Calcularemos la distancia de _Cooks_, y luego extraeremos los valores más influenciables, seleccionados como los valores cuya distancia de Cooks sea cuatro veces la media. 
+
+```{r}
+#modelo lineal
+indian_diabetes_modelo_lineal <- indian_diabetes
+indian_diabetes_modelo_lineal$Insulin <- NULL
+modelo.lineal <- lm(indian_diabetes_modelo_lineal$Glucose ~ ., data=indian_diabetes_modelo_lineal)
+distancia.cooks <- cooks.distance(modelo.lineal)
+plot(distancia.cooks, pch="*", cex=2, main="Valores glucosa de alta influencia")
+#agregar linea de corte con distancia 4 de la media
+abline(h = 4*mean(distancia.cooks, na.rm=T), col="red")
+text(x=1:length(distancia.cooks)+1, y=distancia.cooks, labels=ifelse(distancia.cooks>4*mean(distancia.cooks, na.rm=T),names(distancia.cooks),""), col="red")
+#devuelve las filas con mayor influencia
+influentes <- as.numeric(names(distancia.cooks)[(distancia.cooks > 4*mean(distancia.cooks, na.rm=T))])
+indian_diabetes[influentes,]
+```
+
+La intuición marca que en general veremos valores de muy alto o muy bajo valor en alguno de los atributos, en particular la glocusa, lo que se confirma. Analizando algunos casos en particular:
+
+• La fila 9 presenta un valor de glucosa de 197, extremadamente alto.
+• La fila 255 presenta valores de glucosa, presión sanguinea normal, pero 12 embarazos y un grosor de piel muy delgado, de 7.
+• La fila 271 oresenta un valor normal de glucosa, pero 10 embarazos y un coeficiente de pedigree de 1.136.
+• La fila 446 presenta un valor alto de glucosa, y un coeficiente de pedigree de 2.420, extraordinariamente alto.
+• La fila 538 presenta un valor muy bajo de glucosa, 57, similar a la presión sanguinea, 60.
+
+No parece haber un caso donde la edad sea un factor preponderante, probablemente influenciado por el rango acotado de valores de la muestra.
+
+Eliminaremos de los datos las filas para estos valores extremos. A diferencia de la imputación de valores vacios, donde se busca eliminar el impacto de estos valores al aproximarlos a un valor esperado pero pudiendo utlizar el resto de los atributos, modificar estos tiene gran potencial de disrupción en los modelos.
+
+```{r}
+indian_diabetes <- indian_diabetes[-c(influentes), ]
+```
+
+
+****
+# Análisis de los datos
+****
+
+## Correlaciones
+
+Estudiaremos la correlación entre variables, para analizar la dependencia entre ellas. En el caso de encontrar una dependencia lineal, eliminaremos un atributo, dado que no es necesario uno al tener el otro.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+#correlacion entre variables independientes
+cor_matrix <- cor(indian_diabetes[,1:8])
+cor_matrix
+```
+
+Observando la tabla, la relación más fuerte es entre los embarazos la edad, algo razonable, dado que ambas cosas están relacionadas directamente con el paso del tiempo. La franja de años fertilidad femenina, de cierta flexibilidad, más las propias decisiones propias de cada persona que se suman a los modernos métodos anticonceptivos, hace que la relación sea moderada, no lo suficiente para ser considera lineal.
+
+De este análisis deducimos que todas las variables son valiosas por si mismas, por lo tanto no modificaremos los datos.
+
+## Comprobación de la normalidad y homogeneidad de la varianza  
+ 
+Utilizar test Shapiro-Wilk para confirmar presunción de normalidad.  
+
+H0: los datos provienen de una distribución normal.  
+H1: los datos no provienen de una distribución normal.  
+Nivel de significancia: 0.05
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+shapiro.test(indian_diabetes$Glucose)$p.value
+shapiro.test(indian_diabetes$Age)$p.value
+shapiro.test(indian_diabetes$BloodPressure)$p.value
+shapiro.test(indian_diabetes$SkinThickness)$p.value
+shapiro.test(indian_diabetes$DiabetesPedigreeFunction)$p.value
+shapiro.test(indian_diabetes$Insulin)$p.value
+shapiro.test(indian_diabetes$BMI)$p.value
+shapiro.test(indian_diabetes$Pregnancies)$p.value
+```
+
+De acuerdo al test de Shapiro-Wilk, todo los **valores p** obtenidos son inferiores al nivel de significancia, por lo tanto se rechaza la hipotesis nula, es decir ninguna de la variables proviene de una distribución normal.
+
+
+
+## Analisis inferencial
+
+Utilizaremos el test de "Levene"" para confirmar la homogeneidad de la varianza de acuerdo a los resultados obtenidos en el test de normalidad.  En este caso se utiliza un test no parámetrico dado que ninguna de las variables cumple el supuesto de normalidad.    
+
+H0: las varianzas de las muestras son iguales.
+H1: el menos 2 de las varianzas difieren en las muestras.
+Nivel de significancia: 0.05.
+
+**Preguntas**:  
+
+El valor medio en la presión sanguinea (BloodPressure) es estadísticamente significativo para mujeres que presentan diabetes (Outcome=1) respecto a aquellas que no la presentan (Outcome=0) ?.  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(car)
+
+#la prueba revela un valor de p mayor que 0.05, lo que indica que no hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1)
+leveneTest(BloodPressure ~ Outcome, data = indian_diabetes)
+
+
+bp_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "BloodPressure"]
+bp_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "BloodPressure"]
+
+# Como el valor p resultante  es menor que el nivel de significación de .05, rechazamos la hipótesis nula, es decir, el valor de la mediana en la presión sanguinea para las mujeres con condicion diabetica es significativamente mayor respecto a aquellas que no presentan el síntoma.  
+wilcox.test(bp_sdiabetes,bp_ndiabetes,alternative="greater")
+```
+
+El valor medio en la glucosa (Glucose) es estadísticamente significativo para mujeres que presentan diabetes (Outcome=1) respecto a aquellas que no la presentan (Outcome=0) ?.  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+#la prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restriccion para utilizar el test no paramétrico
+leveneTest(Glucose ~ Outcome, data = indian_diabetes)
+
+
+gl_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "Glucose"]
+gl_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "Glucose"]
+
+# Como el valor p resultante  es menor que el nivel de significación de .05, rechazamos la hipótesis nula, es decir, el valor de la mediana en la glucosa para las mujeres con condicion diabetica es significativamente mayor respecto a aquellas que no presentan el síntoma.  
+wilcox.test(gl_sdiabetes,gl_ndiabetes,alternative="greater")
+```
+
+
+## Análisis predictivo
+
+Construir un modelo de clasificación que permita predecir a partir de las variables independientes objeto de estudio, si una mujer podria tener o no una condición diabética en su organismo.
+
+*Propuesta I: Regresion logística.* 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(1234)
+
+#Al establecer el parámetro  type='response', R generará probabilidades de la forma de P (y = 1 | X). Nuestro límite de decisión será de 0.7. Si P (y = 1 | X)> 0.7 entonces y = 1 de lo contrario y = 0, siendo y nuestra variable dependiente Outcome
+
+train_idx <- sample(1:nrow(indian_diabetes),nrow(indian_diabetes)*0.7,replace=FALSE)
+train<-indian_diabetes[train_idx,]
+test<-indian_diabetes[-train_idx,]
+
+modelo_rl<-glm(Outcome ~  . , data=indian_diabetes,family=binomial(link=logit))
+
+#Evaluar si alguno de los regresores tiene influencia significativa (p-valor del contraste individual inferior al 5 %).
+summary(modelo_rl)
+
+modelo_rl2<-glm(Outcome ~  Pregnancies+Glucose+ BMI+DiabetesPedigreeFunction , data=indian_diabetes,family=binomial(link=logit))
+summary(modelo_rl2)
+
+#El menor valor para el indicador AIC corresponde al modelo con los regresores *Pregnancies + Glucose + BMI + DiabetesPedigreeFunction*, por lo tanto se elige este como el mejor modelo de predicción para estimar la condicion de diabetes.
+
+#Matriz de confusión y precisión del modelo 1
+precdb <- predict(modelo_rl,newdata=test,type='response')
+precdb <- ifelse(precdb > 0.70,1,0)
+misClasificError <- mean(precdb != test$Outcome)
+                         
+print(paste('Precisión en la clasificación:',round((1-misClasificError)*100,digits = 2),'%'))
+
+table(test$Outcome,precdb)
+
+
+#Matriz de confusión y precisión del modelo 2
+precdb2 <- predict(modelo_rl2,newdata=test[,c("Pregnancies","Glucose","BMI","DiabetesPedigreeFunction")],type='response')
+precdb2 <- ifelse(precdb2 > 0.70,1,0)
+misClasificError2 <- mean(precdb2 != test$Outcome)
+                         
+print(paste('Precisión en la clasificación:',round((1-misClasificError2)*100,digits = 2),'%'))
+
+table(test$Outcome,precdb2)
+
+```
+
+Los falsos positivos corresponde a casos en que la predicción de la probabilidad de la respuesta afirmativa es elevada , pero la respuesta observada es negativa, en nuestro caso para 9 mujeres, el modelo indica que tiene condición diabética “1”, pero en realidad no la tiene “0”.
+
+Los falsos negativos corresponde a casos donde el modelo predice que una mujer tiene una probabilidad de condición diabética baja,  sin embargo las mujeres observadas si presentan una condición diabética, 46 individuos en este caso. 
+
+Ademas se puede evidenciar que para obtener un nivel de precisión similar al modelo con todas las variables, tan solo basta con utilizar las 4 variables explicativas comentadas anteriormente.  
+
+
+*Propuesta II: Arboles de desicion C50. *
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+```
+****
+# Presentacion de resultados
+****
+
+****
+# Conclusiones
+****
+
+
+****
+# Bibliografía
+****
+
+Calvo M., Subirats L., Perez D. (2019). Introduccion a la limpieza y analisis de los datos.Editorial UOC.  
+
+Megan Squire (2015). Clean Data. Packt Publishing Ltd.  
+
+Jiawei Han, Micheine Kamber, Jian Pei (2012). Data mining: concepts and techniques.  
+
+Jason W. Osborne (2010). Data Cleaning Basics: Best Practices in Dealing with Extreme Scores. Newborn and Infant Nursing Reviews; 10 (1): pp. 1527-3369.  
+
+Peter Dalgaard (2008). Introductory statistics with R. Springer Science & Business Media.  
+
+Wes McKinney (2012). Python for Data Analysis. O’Reilley Media, Inc.  
+
+Tutorial de Github https://guides.github.com/activities/hello-world.  
