@@ -14,4 +14,4 @@ Juan Pablo Botero Suaza, jboteros@uoc.edu
 
 **data**: contiene el set de datos original y el obtenido posterior a los procesos de limpieza y preparación.  
 **doc**: archivos .html y .pdf con respuesta a las preguntas relacionadas en la práctica II.  
-**src**: código fuente del proyecto en R.    
+**src**: código fuente del proyecto en R Markdown.      
