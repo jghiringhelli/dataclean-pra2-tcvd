@@ -4,12 +4,12 @@ subtitle: "M2.854 - Tipología de vida y Ciclo de los Datos"
 author: "Juan Carlos Ghiringhelli Jueguen, Juan Pablo Botero Suaza"
 date: '`r format(Sys.Date(),"%e de %B, %Y")`'
 output:
-  pdf_document:
+  html_document:
     df_print: kable
     number_sections: yes
     toc: yes
     toc_depth: 2
-  html_document:
+  pdf_document:
     df_print: kable
     number_sections: yes
     toc: yes
@@ -28,7 +28,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 El conjunto de datos elegido registra, en el contexto de consultas para diagnosticar diabetes, datos predictores médicos provenientes de un conjunto de pruebas realizadas a mujeres de la India.   
 
-Como suele ocurrir con datos predictivos médicos, es posible anticipar el diagnóstico de la condición médica para pacientes sin necesidad de realizar la prueba específica. Para casos de alto riesgo se podrían tomar las medidas adecuadas como notificación al paciente o tomar precauciones ante el ingreso del paciente a una operación o una emergencia. También sirve para comprender mejor las causas de la condición y la correlación de diferentes valores con la posibilidad de padecerla. 
+Como suele ocurrir con los conjuntos de datos médicos, es posible predecir el diagnóstico de la condición médica para pacientes sin necesidad de realizar la prueba específica, por medio de métodos del campo de la ciencia de datos. En caso de predecir la condición, para casos de alto riesgo se podrían tomar las medidas adecuadas como notificar al paciente o tomar precauciones ante el ingreso a una operación o una emergencia. También sirve para comprender mejor las causas de la condición y la correlación de diferentes valores con la posibilidad de padecerla. 
 
 El contenido se descargó del siguiente enlace de Kaggle: https://www.kaggle.com/uciml/pima-indians-diabetes-database y contiene nueve atributos:  
 
@@ -51,10 +51,8 @@ El contenido se descargó del siguiente enlace de Kaggle: https://www.kaggle.com
 
 ## Carga de los datos
 
-Cargar el archivo de datos diabetes.csv, validar que los tipos de datos son los correctos. Si no es así, conviertelos al tipo de datos adecuado. 
-
 ```{r}
-indian_diabetes<-read.csv("diabetes.csv", header=TRUE,sep=",",dec=".")
+indian_diabetes<-read.csv("../data/diabetes.csv", header=TRUE,sep=",",dec=".")
 str(indian_diabetes)
 ```
 El set de datos contiene  `r length(indian_diabetes)` variables con un total de `r nrow(indian_diabetes)` observaciones  
@@ -85,7 +83,7 @@ ggplot(data=indian_diabetes ,aes(x=Outcome,fill=Outcome))+ geom_bar() + guides(f
 )
 ```
 
-A partir de los gráficos de boxplot podemos inferir que algunas variables pueden tener mayor incidencia sobre la condición diabética para una mujer de la muestra, donde resalta notoriamente el número de embarazos(Pregnancies), la edad (Age), el nivel de glucosa (Glucose) y el índice de masa corporal (BMI), en los apartados posteriores analizaremos si esta afirmación gráfica tambien tiene su correspondencia desde el punto de vista estadístico inferenial/predictivo.  
+A partir de los gráficos de boxplot podemos inferir que algunas variables pueden tener mayor incidencia sobre la condición diabética para una mujer de la muestra, donde resalta notoriamente el número de embarazos(Pregnancies), la edad (Age), el nivel de glucosa (Glucose) y el índice de masa corporal (BMI), en los apartados posteriores analizaremos si esta afirmación gráfica tambien tiene su correspondencia desde el punto de vista estadístico inferencial/predictivo.  
 
 ****
 # Integración y selección de los datos de interés a analizar
@@ -188,11 +186,11 @@ indian_diabetes[influentes,]
 
 La intuición marca que en general veremos valores de muy alto o muy bajo valor en alguno de los atributos, en particular la glocusa, lo que se confirma. Analizando algunos casos en particular:
 
-• La fila 9 presenta un valor de glucosa de 197, extremadamente alto.
-• La fila 255 presenta valores de glucosa, presión sanguinea normal, pero 12 embarazos y un grosor de piel muy delgado, de 7.
-• La fila 271 oresenta un valor normal de glucosa, pero 10 embarazos y un coeficiente de pedigree de 1.136.
-• La fila 446 presenta un valor alto de glucosa, y un coeficiente de pedigree de 2.420, extraordinariamente alto.
-• La fila 538 presenta un valor muy bajo de glucosa, 57, similar a la presión sanguinea, 60.
+* La fila 9 presenta un valor de glucosa de 197, extremadamente alto.
+* La fila 255 presenta valores de glucosa, presión sanguinea normal, pero 12 embarazos y un grosor de piel muy delgado, de 7.
+* La fila 271 oresenta un valor normal de glucosa, pero 10 embarazos y un coeficiente de pedigree de 1.136.
+* La fila 446 presenta un valor alto de glucosa, y un coeficiente de pedigree de 2.420, extraordinariamente alto.
+* La fila 538 presenta un valor muy bajo de glucosa, 57, similar a la presión sanguinea, 60.
 
 No parece haber un caso donde la edad sea un factor preponderante, probablemente influenciado por el rango acotado de valores de la muestra.
 
@@ -294,9 +292,9 @@ library(car)
 
 leveneTest(BloodPressure ~ Outcome, data = indian_diabetes)
 
-#La prueba revela un valor de p mayor que 0.05, lo que indica que no hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1)
+# La prueba revela un valor de p mayor que 0.05, lo que indica que no hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1)
 
-#Test no paramétrico para variable BloodPressure
+# Test no paramétrico para variable BloodPressure
 bp_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "BloodPressure"]
 bp_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "BloodPressure"]
 
@@ -310,9 +308,9 @@ wilcox.test(bp_sdiabetes,bp_ndiabetes,alternative="greater")
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
 leveneTest(Glucose ~ Outcome, data = indian_diabetes)
-#la prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restricción para utilizar el test no paramétrico
+# La prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restricción para utilizar el test no paramétrico
 
-#Test no paramétrico para variable Glucose
+# Test no paramétrico para variable Glucose
 gl_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "Glucose"]
 gl_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "Glucose"]
 
@@ -326,9 +324,9 @@ wilcox.test(gl_sdiabetes,gl_ndiabetes,alternative="greater")
 
 leveneTest(Insulin ~ Outcome, data = indian_diabetes)
 
-#la prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restricción para utilizar el test no paramétrico
+# La prueba revela un valor de p menor que 0.05, lo que indica que hay una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1),sin embargo no es restricción para utilizar el test no paramétrico
 
-#Test no paramétrico para variable Insulin
+# Test no paramétrico para variable Insulin
 inl_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "Insulin"]
 inl_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "Insulin"]
 
@@ -342,9 +340,9 @@ wilcox.test(inl_sdiabetes,inl_ndiabetes)
 
 leveneTest(Age ~ Outcome, data = indian_diabetes)
 
-#la prueba revela un valor de p mayor que 0.05, lo que indica que no existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
+# La prueba revela un valor de p mayor que 0.05, lo que indica que no existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
 
-#Test no paramétrico para variable Age
+# Test no paramétrico para variable Age
 age_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "Age"]
 age_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "Age"]
 
@@ -358,9 +356,9 @@ wilcox.test(age_sdiabetes,age_ndiabetes)
 
 leveneTest(Pregnancies ~ Outcome, data = indian_diabetes)
 
-#la prueba revela un valor de p menor que 0.05, lo que indica que existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1), sin embargo no es restricción para utilizar el test no paramétrico
+# La prueba revela un valor de p menor que 0.05, lo que indica que existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1), sin embargo no es restricción para utilizar el test no paramétrico
 
-#Test no paramétrico para variable Pregnancies
+# Test no paramétrico para variable Pregnancies
 prg_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "Pregnancies"]
 prg_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "Pregnancies"]
 
@@ -374,9 +372,9 @@ wilcox.test(prg_sdiabetes,prg_ndiabetes)
 
 leveneTest(BMI ~ Outcome, data = indian_diabetes)
 
-#la prueba revela un valor de p mayor que 0.05, lo que indica que no existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
+# La prueba revela un valor de p mayor que 0.05, lo que indica que no existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
 
-#Test no paramétrico para variable BMI
+# Test no paramétrico para variable BMI
 bmi_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "BMI"]
 bmi_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "BMI"]
 
@@ -390,9 +388,9 @@ wilcox.test(bmi_sdiabetes,bmi_ndiabetes)
 
 leveneTest(SkinThickness ~ Outcome, data = indian_diabetes)
 
-#la prueba revela un valor de p menor que 0.05, lo que indica que existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
+# La prueba revela un valor de p menor que 0.05, lo que indica que existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
 
-#Test no paramétrico para variable SkinThickness
+# Test no paramétrico para variable SkinThickness
 stn_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "SkinThickness"]
 stn_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "SkinThickness"]
 
@@ -407,9 +405,9 @@ wilcox.test(stn_ndiabetes, stn_sdiabetes, alternative="less")
 
 leveneTest(DiabetesPedigreeFunction ~ Outcome, data = indian_diabetes)
 
-#la prueba revela un valor de p menor que 0.05, lo que indica que existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
+# La prueba revela un valor de p menor que 0.05, lo que indica que existe una diferencia significativa en las varianzas de los grupos para Outcome (0 ó 1).
 
-#Test no paramétrico para variable DiabetesPedigreeFunction
+# Test no paramétrico para variable DiabetesPedigreeFunction
 dpf_sdiabetes<- indian_diabetes[indian_diabetes$Outcome==1, "DiabetesPedigreeFunction"]
 dpf_ndiabetes<- indian_diabetes[indian_diabetes$Outcome==0, "DiabetesPedigreeFunction"]
 
@@ -475,7 +473,7 @@ CrossTable(test[,"Outcome"], precdb2,prop.chisq  = FALSE, prop.c = FALSE, prop.r
 
 ```
 
-Los falsos positivos corresponde a casos en que la predicción de la probabilidad de la respuesta afirmativa es elevada , pero la respuesta observada es negativa, en nuestro caso para 9 mujeres, el modelo indica que tiene condición diabética “1”, pero en realidad no la tiene “0”.
+Los falsos positivos corresponde a casos en que la predicción de la probabilidad de la respuesta afirmativa es elevada , pero la respuesta observada es negativa, en nuestro caso para 5 mujeres, el modelo indica que tiene condición diabética “1”, pero en realidad no la tiene “0”.
 
 Los falsos negativos corresponde a casos donde el modelo predice que una mujer tiene una probabilidad de condición diabética baja,  sin embargo las mujeres observadas si presentan una condición diabética, 46 individuos en este caso. 
 
@@ -496,6 +494,12 @@ print(sprintf("La precisión del árbol es: %.4f %%",100*sum(modelc50.predict ==
 #Matriz confusión
 CrossTable(test[,"Outcome"], modelc50.predict,prop.chisq  = FALSE, prop.c = FALSE, prop.r =FALSE,dnn = c('Reality', 'Prediction'))
 ```
+De este árbol se pueden deducir varias cosas interesantes
+
+* Para glucosa inferior a 127, con indice de masa corporal menor a 26.4, las chances de padecer la condición son casi nulas.
+* Glucosa normal, entre 127 y 94, un número elevado de embarazos sube las posibilidades, y dentro de este grupo, un elevado coeficiente genético lo eleva a una probabilidad extrema.
+* Para glucosa elevada, sobre 127, los casos extremos, sobre 165, practicamente asegura la condición.
+* Para glucosa elevada no extrema, entre 127 y 165, un alto indice de masa corporal eleva significativamente el diagnóstico, sobre un 65%, y para un índice inferior, sorprendentemente haber tenido entre dos a tres embarazos marcan una probablidad cercana al 65%, mientas que los demas casos son mucho menores. La explicación de esto tendrá que consultarse con expertos en gestación, una hipótesis parcial puede ser la diabetes gestacional, que para madres con dos o tres embarazos es común, que para mujeres sin embarazos no se da, y que para mujeres con muchos embarazos estos valores  de glucosa y mása corporal sean comunes, probablemente atado a la posibilidad de que cuando se hizo la prueba estuviera embarazada la persona, dato que desconocemos y no podemos correlacionar ni analizar, pero que sería interesante.
 
 *Propuesta III: Arboles de desición CART. *
 ```{r echo=TRUE, message=FALSE, warning=FALSE,fig.align = "center",fig.height = 10, fig.width = 10}
@@ -513,6 +517,7 @@ print(sprintf("La precisión del árbol es: %.4f %%",100*sum(modelcart.predict =
 CrossTable(test[,"Outcome"], modelcart.predict ,prop.chisq  = FALSE, prop.c = FALSE, prop.r =FALSE,dnn = c('Reality', 'Prediction'))
 ```
 
+Las conclusiones que se pueden sacar de este árbol sin muy similares al anterior, disgregandose en menor granularidad el peso del coeficiente de pedigree, pero sin encontrar grandes revelaciones. 
 
 ****
 # Presentacion de resultados
@@ -572,13 +577,13 @@ data.frame(Modelo=c("Regresión Logística","Arboles de Decision C50","Arboles d
 ****
 
 
-• Inicialmente se ha realizado un estudio de los datos y los atributos para comprender semántica y sintácticamente el conjunto a estudiar. Posteriormente los datos fueron sometidos a preprocesamiento para imputar los ceros que carecían de sentido, análisis de valores extremos para eliminarlos, y correlación de variables para considerar la eliminación de alguna, lo que finalmente no ocurrió.  
+* Inicialmente se ha realizado un estudio de los datos y los atributos para comprender semántica y sintácticamente el conjunto a estudiar. Posteriormente los datos fueron sometidos a preprocesamiento para imputar los ceros que carecían de sentido, análisis de valores extremos para eliminarlos, y correlación de variables para considerar la eliminación de alguna, lo que finalmente no ocurrió.  
 
-• Los análisis de correlación y de contraste de hipótesis permite analizar cuáles de los atributos estudiados ejercen una mayor influencia sobre la posibilidad de padecer diabetes, y el modelo de regresión lineal obtenido permite realizar predicciones para el diagnóstico dados otros valores conocidos que son más simples de obtener.  
+* Los análisis de correlación y de contraste de hipótesis permite analizar cuáles de los atributos estudiados ejercen una mayor influencia sobre la posibilidad de padecer diabetes, y el modelo de regresión lineal obtenido permite realizar predicciones para el diagnóstico dados otros valores conocidos que son más simples de obtener.  
 
-• Se han realizado tres tipos de pruebas estadísticas sobre el conjunto de datos relativo a observaciones médicas para mujeres de la India, ante pruebas de diabetes, con el motivo de cumplir con el objetivo que se planteaba al comienzo. Para cada una de las pruebas, se han graficado e impreso los resultados que arrojan, para extraer información valiosa referida al conjunto o una parte de él. El modelo de regresión logística, en términos de la calidad del proceso de clasificación, es el mejor de los 3 escenarios evaluados.   
+* Se han realizado tres tipos de pruebas estadísticas sobre el conjunto de datos relativo a observaciones médicas para mujeres de la India, ante pruebas de diabetes, con el motivo de cumplir con el objetivo que se planteaba al comienzo. Para cada una de las pruebas, se han graficado e impreso los resultados que arrojan, para extraer información valiosa referida al conjunto o una parte de él. El modelo de regresión logística, en términos de la calidad del proceso de clasificación, es el mejor de los 3 escenarios evaluados.   
 
-• A partir de los resultados obtenedios en los modelos de árboles de decisión, es posible identificar que la variable Glucose tiene gran incidencia sobre las reglas de clasificación obtenidas, podriamos decir que es el atributo más influyente al momento de determinar la presencia de diabetes sobre un individuo bajo este contexto, incluso como se ilustra en el perfil de prueba, solo la variación en la variable Glucose genera diferentes valores para la variable objetivo Outcome.  
+* A partir de los resultados obtenedios en los modelos de árboles de decisión, es posible identificar que la variable Glucose tiene gran incidencia sobre las reglas de clasificación obtenidas, podriamos decir que es el atributo más influyente al momento de determinar la presencia de diabetes sobre un individuo bajo este contexto, incluso como se ilustra en el perfil de prueba, solo la variación en la variable Glucose genera diferentes valores para la variable objetivo Outcome.  
 
 ****
 # Bibliografía
