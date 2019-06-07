@@ -168,6 +168,7 @@ outlier_dpf
 ```
 Utilizaremos este paso para detectar a simple vista los casos más importantes, permitiéndonos seleccionar atributos problemáticos. Si bien la insulina presenta muchos valores extremos, este valor mide la dosis dada al paciente en la última hora, por lo cual es normal que los valores sean arbitrariamente muy diferentes. Para detectar explicitamente los valores, utilizaremos un método multi-variable. Crearemos un modelo lineal con las observaciones de la glucosa, por ser el valor con más importancia detectado anteriormente y por no presentar valores extremos en las _boxplots_, y utilizando el conjunto total de datos menos la prueba de insulina, ya que el valor 0 es muy común y el hecho de que se le haya suministrado al paciente en la última hora no debería tener gran influencia en el padecimiento de la condición. 
 
+
 Calcularemos la distancia de _Cooks_, y luego extraeremos los valores más influenciables, seleccionados como los valores cuya distancia de Cooks sea cuatro veces la media.   
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE,fig.align = "center",fig.height = 10, fig.width = 10}
