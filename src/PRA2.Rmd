@@ -211,10 +211,14 @@ write.csv(indian_diabetes,file = "clean_diabetes.csv",row.names = FALSE)
 ## Correlaciones
 
 Estudiaremos la correlación entre variables, para analizar la dependencia entre ellas. En el caso de encontrar una dependencia lineal, eliminaremos un atributo, dado que no es necesario uno al tener el otro.
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-#correlacion entre variables independientes
+```{r echo=TRUE, message=FALSE, warning=FALSE,fig.align = "center",fig.height = 10, fig.width = 10}
+library(corrplot)
+
+#correlación entre variables independientes
 cor_matrix <- cor(indian_diabetes[,1:8])
 cor_matrix
+
+corrplot(cor_matrix)
 ```
 
 Observando la tabla, la relación más fuerte es entre el número de embarazos y la edad, algo razonable, dado que ambas cosas están relacionadas directamente con el paso del tiempo. La franja de años fertilidad femenina, de cierta flexibilidad, más las propias decisiones propias de cada persona que se suman a los modernos métodos anticonceptivos, hace que la relación sea moderada, no lo suficiente para ser considera lineal.  
@@ -229,19 +233,48 @@ H0: los datos provienen de una distribución normal.
 H1: los datos no provienen de una distribución normal.  
 Nivel de significancia: 0.05
 
-```{r echo=TRUE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE,fig.align = "center",fig.height = 10, fig.width = 10}
 shapiro.test(indian_diabetes$Glucose)$p.value
+ggplot(data = indian_diabetes) + aes(sample = Glucose) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("Glucose")
+
 shapiro.test(indian_diabetes$Age)$p.value
+ggplot(data = indian_diabetes) + aes(sample = Age) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("Age")
+
+
 shapiro.test(indian_diabetes$BloodPressure)$p.value
+ggplot(data = indian_diabetes) + aes(sample = BloodPressure) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("BloodPressure")
+
+
 shapiro.test(indian_diabetes$SkinThickness)$p.value
+ggplot(data = indian_diabetes) + aes(sample = SkinThickness) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("SkinThickness")
+
+
 shapiro.test(indian_diabetes$DiabetesPedigreeFunction)$p.value
+ggplot(data = indian_diabetes) + aes(sample = DiabetesPedigreeFunction) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("DiabetesPedigreeFunction")
+
+
 shapiro.test(indian_diabetes$Insulin)$p.value
+ggplot(data = indian_diabetes) + aes(sample = Insulin) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("Insulin")
+
+
 shapiro.test(indian_diabetes$BMI)$p.value
+ggplot(data = indian_diabetes) + aes(sample = BMI) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("BMI")
+
+
 shapiro.test(indian_diabetes$Pregnancies)$p.value
+ggplot(data = indian_diabetes) + aes(sample = Pregnancies) + geom_qq(distribution = qnorm) + 
+           geom_qq_line(line.p = c(0.25, 0.75), col = "blue") + ylab("Pregnancies")
+
 ```
 
-De acuerdo al test de Shapiro-Wilk, todo los **valores p** obtenidos son inferiores al nivel de significancia, por lo tanto se rechaza la hipotesis nula, es decir ninguna de la variables proviene de una distribución normal.
-
+De acuerdo al test de Shapiro-Wilk, todos los **valores p** obtenidos son inferiores al nivel de significancia, por lo tanto se rechaza la hipotesis nula, es decir ninguna de la variables proviene de una distribución normal. De igual forma vemos en las gráficas que ninguna de las distribuciones reales se aproxima a la distribución normal teórica.
 
 
 ## Analisis inferencial y homogeneidad de la varianza
